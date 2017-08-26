@@ -12,6 +12,7 @@ public:
 
     virtual void OnStep() {
         TryBuildSupplyDepot();
+        TryBuildBarracks();
     }
 
     virtual void OnUnitIdle(const Unit& unit) final {
@@ -74,6 +75,15 @@ private:
 
         // Try and build a depot. Find a random SCV and give it the order.
         return TryBuildStructure(ABILITY_ID::BUILD_SUPPLYDEPOT);
+    }
+
+    bool TryBuildBarracks() {
+        Units depots = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_SUPPLYDEPOT));
+        Units barracks = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_BARRACKS));
+        if (barracks.size() < 3 && depots.size() >= 1) {
+            return TryBuildStructure(ABILITY_ID::BUILD_BARRACKS);
+        }
+        return false;
     }
 
     bool FindNearestMineralPatch(const Point2D& start, uint64_t& target) {
