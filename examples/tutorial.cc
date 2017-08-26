@@ -31,6 +31,23 @@ public:
             Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target);
             break;
         }
+        case UNIT_TYPEID::TERRAN_BARRACKS: {
+            Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
+            Units barracks = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_BARRACKS));
+            int marines_in_prod = 0;
+
+            for (const auto& barrack : barracks) {
+                for (const auto& order : barrack.orders) {
+                    if (order.ability_id == ABILITY_ID::TRAIN_MARINE) {
+                        marines_in_prod++;
+                    }
+                }
+            };
+
+            if (marines.size() + marines_in_prod < 8) {
+                Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
+            }
+        }
         default: {
             break;
         }
