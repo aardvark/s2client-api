@@ -55,6 +55,40 @@ public:
         }
     }
 private:
+
+    bool TryBuildStructureConcurrently(ABILITY_ID ability_type_for_structure, int concurrent_number = 1, UNIT_TYPEID unit_type = UNIT_TYPEID::TERRAN_SCV) {
+        const ObservationInterface *observation = Observation();
+
+        Units all_scvs = observation->GetUnits(Unit::Alliance::Self, IsUnit(unit_type));
+        std::vector<Unit> builders;
+        int already_building = 0;
+        for (const auto& scv : all_scvs) {
+            if (already_building >= concurrent_number) {
+                return false;
+            }
+            for(const auto& order : scv.orders) {
+                if (order.ability_id == ability_type_for_structure) {
+                    already_building++;
+                    break;
+                } else {
+                    builders.push_back(scv);
+                }
+            }
+        }
+
+        builders.resize(concurrent_number - already_building);
+
+        for (const auto& scv : builders) {
+            float rx = GetRandomScalar();
+            float ry = GetRandomScalar();
+
+            Actions()->UnitCommand(scv,
+                                   ability_type_for_structure,
+                                   Point2D(scv.pos.x + rx * 15.0f, scv.pos.y + ry * 15.0f));
+        }
+        return true;
+    }
+
     bool TryBuildStructure(ABILITY_ID ability_type_for_structure, UNIT_TYPEID unit_type = UNIT_TYPEID::TERRAN_SCV) {
         const ObservationInterface* observation = Observation();
 
@@ -99,7 +133,7 @@ private:
         Units depots = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_SUPPLYDEPOT));
         Units barracks = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_BARRACKS));
         if (barracks.size() < 3 && depots.size() >= 1) {
-            return TryBuildStructure(ABILITY_ID::BUILD_BARRACKS);
+            return TryBuildStructureConcurrently(ABILITY_ID::BUILD_BARRACKS, 3);
         }
         return false;
     }
