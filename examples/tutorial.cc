@@ -13,6 +13,7 @@ public:
     virtual void OnStep() {
         TryBuildSupplyDepot();
         TryBuildBarracks();
+        TryAttackWithMarines();
     }
 
     virtual void OnUnitIdle(const Unit& unit) final {
@@ -121,6 +122,23 @@ private:
         }
 
         return true;
+    }
+
+    bool TryAttackWithMarines() {
+        Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
+        if (marines.size() >= 8 ) {
+            GameInfo game_info = Observation()->GetGameInfo();
+            Point2D enemy_start_location;
+            enemy_start_location = game_info.enemy_start_locations.front();
+
+            std::vector<Tag> marine_tags;
+            for (const auto &marine : marines) {
+                marine_tags.push_back(marine.tag);
+            }
+            Actions()->UnitCommand(marine_tags, ABILITY_ID::ATTACK, enemy_start_location);
+            return true;
+        }
+        return false;
     }
 };
 
