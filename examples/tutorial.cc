@@ -13,6 +13,7 @@ public:
     virtual void OnStep() {
         TryBuildSupplyDepot();
         TryBuildBarracks();
+        TryBuildMarines();
         TryAttackWithMarines();
     }
 
@@ -32,29 +33,36 @@ public:
             Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target);
             break;
         }
-        case UNIT_TYPEID::TERRAN_BARRACKS: {
-            Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
-            Units barracks = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_BARRACKS));
-            int marines_in_prod = 0;
-
-            for (const auto& barrack : barracks) {
-                for (const auto& order : barrack.orders) {
-                    if (order.ability_id == ABILITY_ID::TRAIN_MARINE) {
-                        marines_in_prod++;
-                    }
-                }
-            };
-
-            if (marines.size() + marines_in_prod < 8) {
-                Actions()->UnitCommand(unit, ABILITY_ID::TRAIN_MARINE);
-            }
-        }
         default: {
             break;
         }
         }
     }
 private:
+
+    bool TryBuildMarines(){
+        int marine_limit = 100;
+        Units marines = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_MARINE));
+        Units barracks = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_BARRACKS));
+        int marines_in_prod = 0;
+
+        std::vector<Tag> idle_barracks;
+        for (const auto &barrack : barracks) {
+            for (const auto &order : barrack.orders) {
+                if (order.ability_id == ABILITY_ID::TRAIN_MARINE) {
+                    marines_in_prod++;
+                }
+            }
+            if (barrack.orders.size() == 0) {
+                idle_barracks.push_back(barrack.tag);
+            }
+        }
+
+        if (idle_barracks.size() > 0 && marines.size() + marines_in_prod < 100) {
+           Actions()->UnitCommand(idle_barracks, ABILITY_ID::TRAIN_MARINE);
+        }
+        return true;
+    }
 
     bool TryBuildStructure(ABILITY_ID ability_type_for_structure, 
                            int concurrent_number = 1, 
