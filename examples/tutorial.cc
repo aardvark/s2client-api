@@ -5,9 +5,18 @@
 using namespace sc2;
 
 class Bot : public Agent {
+
+Point2D marine_staging_location;
+
 public:
     virtual void OnGameStart() final {
         std::cout << "Hello, World!" << std::endl;
+        Unit cc = Observation()->GetUnits(Unit::Alliance::Self, IsUnit(UNIT_TYPEID::TERRAN_COMMANDCENTER)).front();
+        if (cc.pos.x == 29.5) {
+            marine_staging_location = Point2D(67.003418f, 127.894043f);
+        } else {
+            marine_staging_location = Point2D(77.574707f, 30.615479f);
+        }
     }
 
     virtual void OnStep() {
@@ -32,6 +41,17 @@ public:
             }
             Actions()->UnitCommand(unit, ABILITY_ID::SMART, mineral_target);
             break;
+        }
+        default: {
+            break;
+        }
+        }
+    }
+
+    virtual void OnUnitCreated(const Unit& unit) final {
+        switch(unit.unit_type.ToType()) {
+        case UNIT_TYPEID::TERRAN_BARRACKS: {
+            Actions()->UnitCommand(unit, ABILITY_ID::RALLY_UNITS, marine_staging_location);
         }
         default: {
             break;
